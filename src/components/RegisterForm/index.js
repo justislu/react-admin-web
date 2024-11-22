@@ -33,6 +33,7 @@ class RegisterForm extends React.Component {
 				}
 				this.props.register(values.registerUsername, values.registerPassword);
 				message.success('注册成功');
+				this.gobackLogin();
 			}
 		});
 	}

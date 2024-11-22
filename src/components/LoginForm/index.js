@@ -1,6 +1,6 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
-import { Form, Input, Row, Col } from 'antd';
+import { Form, Input, Row, Col, Checkbox } from 'antd';
 import { connect } from 'react-redux';
 import { randomNum } from '@/utils/utils';
 import PromptBox from '@/components/PromptBox';
@@ -12,19 +12,79 @@ class LoginForm extends React.Component {
 		super(props);
 		this.state = {
 			focusItem: -1, // 保存当前聚焦的input
-			code: '' // 验证码
+			code: '', // 验证码
+			checked: true,
 		};
 		this.canvas = React.createRef();
 	}
 
 	componentDidMount() {
 		this.createCode();
+		this.getUserInfo();
 	}
 
 	// 生成验证码
 	createCode = () => {
 		let ctx = this.canvas.current.getContext('2d');
-		let chars = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+		let chars = [
+			1,
+			2,
+			3,
+			4,
+			5,
+			6,
+			7,
+			8,
+			9,
+			'a',
+			'b',
+			'c',
+			'd',
+			'e',
+			'f',
+			'g',
+			'h',
+			'j',
+			'k',
+			'l',
+			'm',
+			'n',
+			'p',
+			'q',
+			'r',
+			's',
+			't',
+			'u',
+			'v',
+			'w',
+			'x',
+			'y',
+			'z',
+			'A',
+			'B',
+			'C',
+			'D',
+			'E',
+			'F',
+			'G',
+			'H',
+			'J',
+			'K',
+			'L',
+			'M',
+			'N',
+			'P',
+			'Q',
+			'R',
+			'S',
+			'T',
+			'U',
+			'V',
+			'W',
+			'X',
+			'Y',
+			'Z',
+		];
 		let code = '';
 		ctx.clearRect(0, 0, 80, 39);
 		for (let i = 0; i < 4; i++) {
@@ -37,48 +97,76 @@ class LoginForm extends React.Component {
 			ctx.shadowOffsetY = randomNum(-3, 3);
 			ctx.shadowBlur = randomNum(-3, 3);
 			ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-			let x = 80 / 5 * (i + 1);
+			let x = (80 / 5) * (i + 1);
 			let y = 39 / 2;
 			let deg = randomNum(-25, 25);
 			/** 设置旋转角度和坐标原点* */
 			ctx.translate(x, y);
-			ctx.rotate(deg * Math.PI / 180);
+			ctx.rotate((deg * Math.PI) / 180);
 			ctx.fillText(char, 0, 0);
 			/** 恢复旋转角度和坐标原点* */
-			ctx.rotate(-deg * Math.PI / 180);
+			ctx.rotate((-deg * Math.PI) / 180);
 			ctx.translate(-x, -y);
 		}
 		this.setState({
-			code
+			code,
 		});
-	}
+	};
+
+	// 获取本地存储的用户信息
+	getUserInfo = () => {
+		const savedData = localStorage.getItem('rememberForm');
+		const query = savedData ? JSON.parse(savedData) : {};
+		if (query?.rememberMe) {
+			this.setState({
+				checked: true
+			});
+			this.props.users.username = query?.username;
+			this.props.users.password = query?.password;
+		}
+		console.log('pop', query);
+	};
+
+	// 存储注册用户数据
+	setUserInfo = () => {
+		// 记住密码
+		const query = {
+			rememberMe: this.state.checked,
+			...this.props.users[0]
+		};
+		localStorage.setItem('rememberForm', JSON.stringify(query));
+		console.log('pop注册数据', query);
+	};
 
 	loginSubmit = (e) => {
 		e.preventDefault();
 		this.setState({
-			focusItem: -1
+			focusItem: -1,
 		});
 		this.props.form.validateFields((err, values) => {
 			if (!err) {
 				// 表单登录时，若验证码长度小于4则不会验证，所以我们这里要手动验证一次，线上的未修复
-				if (this.state.code.toUpperCase() !== values.verification.toUpperCase()) {
+				if (
+					this.state.code.toUpperCase() !== values.verification.toUpperCase()
+				) {
 					this.props.form.setFields({
 						verification: {
 							value: values.verification,
-							errors: [new Error('验证码错误')]
-						}
+							errors: [new Error('验证码错误')],
+						},
 					});
 					return;
 				}
-
 				// 检测用户名是否存在
-				let result = this.props.users.find((item) => item.username === values.username);
+				let result = this.props.users.find(
+					(item) => item.username === values.username
+				);
 				if (!result) {
 					this.props.form.setFields({
 						username: {
 							value: values.username,
-							errors: [new Error('用户名不存在')]
-						}
+							errors: [new Error('用户名不存在')],
+						},
 					});
 					return;
 				}
@@ -87,28 +175,38 @@ class LoginForm extends React.Component {
 					this.props.form.setFields({
 						password: {
 							value: values.password,
-							errors: [new Error('密码错误')]
-						}
+							errors: [new Error('密码错误')],
+						},
 					});
 					return;
 				}
 
 				this.props.login(values.username);
-
 				let { from } = this.props.location.state || { from: { pathname: '/' } };
+				// 记住密码
+				const query = {
+					rememberMe: this.state.checked,
+					...this.props.users[0]
+				};
+				localStorage.setItem('rememberForm', JSON.stringify(query));
 				this.props.history.push(from);
 			}
 		});
-	}
+	};
+
+	onChange = (e) => {
+		this.setState({ checked: e.target.checked });
+	};
 
 	register = () => {
+		this.setUserInfo();
 		this.props.switchShowBox('register');
 		setTimeout(() => this.props.form.resetFields(), 500);
-	}
+	};
 
 	render() {
 		let { getFieldDecorator, getFieldError } = this.props.form;
-		let { focusItem } = this.state;
+		let { focusItem, checked } = this.state;
 		let usernameError = getFieldError('username');
 		let passwordError = getFieldError('password');
 		let verificationError = getFieldError('verification');
@@ -118,81 +216,115 @@ class LoginForm extends React.Component {
 				<Form onSubmit={this.loginSubmit}>
 					<Form.Item
 						help={
-							usernameError
-							&& <PromptBox info={usernameError} width={usernameError} />
-						}
-					>
-						{
-							getFieldDecorator('username', {
-								rules: [{ required: true, message: '请输入用户名' }]
-							})(
-								<Input
-									onFocus={() => this.setState({ focusItem: 0 })}
-									onBlur={() => this.setState({ focusItem: -1 })}
-									maxLength={16}
-									placeholder="用户名"
-									addonBefore={<span className={focusItem === 0 ? `iconfont icon-User ${style.focus}` : 'iconfont icon-User'} />}
-								/>
+							usernameError && (
+								<PromptBox info={usernameError} width={usernameError} />
 							)
 						}
+					>
+						{getFieldDecorator('username', {
+							rules: [{ required: true, message: '请输入用户名' }],
+						})(
+							<Input
+								onFocus={() => this.setState({ focusItem: 0 })}
+								onBlur={() => this.setState({ focusItem: -1 })}
+								maxLength={16}
+								placeholder="用户名"
+								addonBefore={(
+									<span
+										className={
+											focusItem === 0
+												? `iconfont icon-User ${style.focus}`
+												: 'iconfont icon-User'
+										}
+									/>
+								)}
+							/>
+						)}
 					</Form.Item>
 					<Form.Item
 						help={
-							passwordError
-							&& <PromptBox info={passwordError} width={passwordError} />
-						}
-					>
-						{
-							getFieldDecorator('password', {
-								rules: [{ required: true, message: '请输入密码' }]
-							})(
-								<Input
-									onFocus={() => this.setState({ focusItem: 1 })}
-									onBlur={() => this.setState({ focusItem: -1 })}
-									type="password"
-									maxLength={16}
-									placeholder="密码"
-									addonBefore={<span className={focusItem === 1 ? `iconfont icon-suo1 ${style.focus}` : 'iconfont icon-suo1'} />}
-								/>
+							passwordError && (
+								<PromptBox info={passwordError} width={passwordError} />
 							)
 						}
+					>
+						{getFieldDecorator('password', {
+							rules: [{ required: true, message: '请输入密码' }],
+						})(
+							<Input
+								onFocus={() => this.setState({ focusItem: 1 })}
+								onBlur={() => this.setState({ focusItem: -1 })}
+								type="password"
+								maxLength={16}
+								placeholder="密码"
+								addonBefore={(
+									<span
+										className={
+											focusItem === 1
+												? `iconfont icon-suo1 ${style.focus}`
+												: 'iconfont icon-suo1'
+										}
+									/>
+								)}
+							/>
+						)}
 					</Form.Item>
 
 					<Row>
 						<Col span={15}>
 							<Form.Item
 								help={
-									verificationError
-								&& <PromptBox style={{ 'margin-left': '99px' }} info={verificationError} width={verificationError} />
-								}
-							>
-								{
-									getFieldDecorator('verification', {
-										validateFirst: true,
-										rules: [{ required: true, message: '请输入验证码' }]
-									})(
-										<Input
-											onFocus={() => this.setState({ focusItem: 2 })}
-											onBlur={() => this.setState({ focusItem: -1 })}
-											maxLength={4}
-											placeholder="验证码"
-											addonBefore={(
-												<span
-													className={focusItem === 2 ? `iconfont icon-securityCode-b ${style.focus}` : 'iconfont icon-securityCode-b'}
-												/>
-											)}
+									verificationError && (
+										<PromptBox
+											style={{ 'margin-left': '99px' }}
+											info={verificationError}
+											width={verificationError}
 										/>
 									)
 								}
+							>
+								{getFieldDecorator('verification', {
+									validateFirst: true,
+									rules: [{ required: true, message: '请输入验证码' }],
+								})(
+									<Input
+										onFocus={() => this.setState({ focusItem: 2 })}
+										onBlur={() => this.setState({ focusItem: -1 })}
+										maxLength={4}
+										placeholder="验证码"
+										addonBefore={(
+											<span
+												className={
+													focusItem === 2
+														? `iconfont icon-securityCode-b ${style.focus}`
+														: 'iconfont icon-securityCode-b'
+												}
+											/>
+										)}
+									/>
+								)}
 							</Form.Item>
 						</Col>
 						<Col span={9}>
-							<canvas style={{ position: 'relative', 'z-index': '100' }} onClick={this.createCode} width="80" height="39" ref={this.canvas} />
+							<canvas
+								style={{ position: 'relative', 'z-index': '100' }}
+								onClick={this.createCode}
+								width="80"
+								height="39"
+								ref={this.canvas}
+							/>
 						</Col>
 					</Row>
+					<Form.Item className="checkbox">
+						<Col span={24}>
+							<Checkbox checked={checked} onChange={this.onChange}>记住密码</Checkbox>
+						</Col>
+					</Form.Item>
 					<div className={style.bottom}>
 						<input className={style.loginBtn} type="submit" value="登录" />
-						<span onClick={this.register} className={style.registerBtn}>注册</span>
+						<span onClick={this.register} className={style.registerBtn}>
+							注册
+						</span>
 					</div>
 				</Form>
 				<div className={style.footer}>
@@ -204,13 +336,15 @@ class LoginForm extends React.Component {
 }
 
 let mapStateToProps = (state) => ({
-	users: state.userStore.users
+	users: state.userStore.users,
 });
 
 let mapDispatchToProps = (dispatch) => ({
 	login(username) {
 		dispatch(login(username));
-	}
+	},
 });
 
-export default Form.create()(withRouter(connect(mapStateToProps, mapDispatchToProps)(LoginForm)));
+export default Form.create()(
+	withRouter(connect(mapStateToProps, mapDispatchToProps)(LoginForm))
+);

@@ -31,7 +31,7 @@ class Login extends React.Component {
 			message: (
 				<ul>
 					<li>初始账号：admin</li>
-					<li>初始密码：admin</li>
+					<li>初始密码：123456</li>
 				</ul>
 			),
 			duration: 0,

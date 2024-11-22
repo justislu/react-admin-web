@@ -4,7 +4,7 @@ import { isAuthenticated, authenticateSuccess, logout } from '@/utils/session';
 // 初始化state
 const initState = {
 	isLogin: !!isAuthenticated(),
-	users: localStorage.users ? JSON.parse(localStorage.users) : [{ username: 'admin', password: 'admin' }],
+	users: localStorage.users ? JSON.parse(localStorage.users) : [{ username: 'admin', password: '123456' }],
 	loginUser: isAuthenticated() ? { name: isAuthenticated() } : {}
 };
 
